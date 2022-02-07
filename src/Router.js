@@ -1,16 +1,17 @@
 import React from 'react';
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 import FormUser from './View/FormUser';
+import DataTableUsers from './View/DataTable';
  
-export default class RouteList extends React.Component {
+export default function RouteList() {
 
-    render() {
-        return (
-            <Router>
-                <Switch>
-                    <Route exact path="/"><FormUser /></Route>
-                </Switch>
-            </Router>
-        )
-    }
+    return (
+        <Router>
+            <Switch>
+                <Route exact path="/"><FormUser /></Route>
+                <Route exact path="/employee-list"><DataTableUsers /></Route>
+            </Switch>
+        </Router>
+    )
+
 }

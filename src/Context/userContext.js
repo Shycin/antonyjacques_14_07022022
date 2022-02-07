@@ -1,18 +1,20 @@
 import PropTypes from 'prop-types'
 import React, { useState } from 'react'
+import { getSave } from '../Services/Save';
 
-export const userContext = React.createContext()
+export const usersContext = React.createContext()
 
 export const ContextUserContextProvider = ({ children }) => {
-  const [user, setUser] = useState(1)
+  const [users, setUsers] = useState(getSave())
+
   return (
-    <userContext.Provider
+    <usersContext.Provider
       value={{
-        user,
-        setUser,
+        users,
+        setUsers,
       }}>
       {children}
-    </userContext.Provider>
+    </usersContext.Provider>
   )
 }
 

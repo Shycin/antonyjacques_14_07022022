@@ -1,5 +1,7 @@
 /* eslint-disable default-case */
 import React, {useState, useContext, useEffect} from 'react'
+import { Link } from 'react-router-dom';
+
 import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
@@ -14,22 +16,33 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 
-import { userContext } from '../../Context/userContext'
+import Modal from '@mui/material/Modal';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
+
+import { usersContext } from '../../Context/userContext'
 import { states, department } from '../../Data/data'
+
+import { Save } from '../../Services/Save'
 
 function FormUser() {
 
-    const { user, setUser } = useContext(userContext)
+    const { users, setUsers } = useContext(usersContext)
+
+    const [open, setOpen] = useState(true);
+    const handleOpen = () => setOpen(true);
+    const handleClose = () => setOpen(false);
 
     const initialValue = {
-        firstName: null,
-        lastName: null,
+        firstName: '',
+        lastName: '',
         dateOfBirth: null,
         startDate: null,
-        street: null,
-        city: null,
+        street: '',
+        city: '',
         state: states[0]['abbreviation'],
-        zipCode: null,
+        zipCode: '',
         department: department[0],
     }
     const [employee, setEmployee] = useState(initialValue)
@@ -54,54 +67,106 @@ function FormUser() {
         event.preventDefault();
 
         const errors = Object.entries(employee).filter((each) => 
-            each[1] === null
+            each[1] === null || each[1] === ''
         )
 
-        //setError({ ...error, initialError })
-        errors.forEach((error) => {
-            switch(error[0])
-            {
-                case 'firstName': setError({ ...error, firstName: true }); break;
-                case 'lastName': setError({ ...error, lastName: true }); break;
-                case 'dateOfBirth': setError({ ...error, dateOfBirth: true }); break;
-                case 'startDate': setError({ ...error, startDate: true }); break;
-                case 'street': setError({ ...error, street: true }); break;
-                case 'city': setError({ ...error, city: true }); break;
-                case 'state': setError({ ...error, state: true }); break;
-                case 'zipCode': setError({ ...error, zipCode: true }); break;
-                case 'department': setError({ ...error, department: true }); break;
+        if(errors.length)
+        {
+            setError({ ...error, initialError })
+
+            var init = {
+                firstName: false,
+                lastName: false,
+                dateOfBirth: false,
+                startDate: false,
+                street: false,
+                city: false,
+                state: false,
+                zipCode: false,
+                department: false,
             }
-        })
+            errors.forEach((error_) => {
+                switch(error_[0])
+                {
+                    case 'firstName': init = { ...init, firstName: true }; break;
+                    case 'lastName': init = { ...init, lastName: true }; break;
+                    case 'dateOfBirth': init = { ...init, dateOfBirth: true }; break;
+                    case 'startDate': init = { ...init, startDate: true }; break;
+                    case 'street': init = { ...init, street: true }; break;
+                    case 'city': init = { ...init, city: true }; break;
+                    case 'state': init = { ...init, state: true }; break;
+                    case 'zipCode': init = { ...init, zipCode: true }; break;
+                    case 'department': init = { ...init, department: true }; break;
+                }
+            })
 
+            setError({ ...error, ...init })
+        }
+        else
+        {
+            setError({ ...error, initialError })
+            Save(employee).then((data) => {
+                setUsers([...users, employee] )
+                setEmployee(initialValue)
+                handleOpen()
+            })
+        }
         
-
-
-        console.log(errors)
-        //const newUser = user.push()
-        //setUser(newUser)
     }
 
+    useEffect(() => {
+        console.log(users)
+    },[users])
 
-    useEffect(()=>{
-        console.log(error)
-    },[error])
+    const style = {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: 400,
+        bgcolor: 'background.paper',
+        border: '2px solid #000',
+        boxShadow: 24,
+        p: 4,
+    };
 
     return (
         <div className="App">
             <Container maxWidth="xs">
                 <h1>HRnet</h1>
-                {/* <Link to="/"></Link> */}
+                <Link to="/employee-list">View Current Employees</Link>
+                <Modal
+                    open={open}
+                    onClose={handleClose}
+                    aria-labelledby="modal-modal-title"
+                    aria-describedby="modal-modal-description"
+                >
+                    <Box sx={style}>
+                        <Typography id="modal-modal-title" variant="h6" component="h2">
+                            Employee Created !
+                        </Typography>
+                        <IconButton
+                            aria-label="close"
+                            onClick={handleClose}
+                            sx={{
+                                position: 'absolute',
+                                right: 8,
+                                top: 8,
+                                color: (theme) => theme.palette.grey[500],
+                            }}
+                            >
+                            <CloseIcon />
+                        </IconButton>
+                    </Box>
+                </Modal>
                 <form id='form' action='#' onSubmit={(e) => createNewUser(e)}>
                     <Box mt={2}>
                         <Box mt={2}>
                             <TextField
+                                value={employee.firstName}
                                 required 
                                 id="first-name"
-                                // error
-                                // id="outlined-error-helper-text"
                                 label="First Name"
-                                // defaultValue=""
-                                // helperText="Incorrect entry."
                                 fullWidth 
                                 error={error.firstName}
                                 helperText={error.firstName ? 'Veuillez entre une valeur' : '' }
@@ -112,6 +177,7 @@ function FormUser() {
                         </Box>
                         <Box mt={2}>
                             <TextField
+                                value={employee.lastName}
                                 required 
                                 id="last-name"
                                 label="Last Name"
@@ -130,10 +196,16 @@ function FormUser() {
                                     id="date-birth"
                                     label="Date of Birth"
                                     value={employee.dateOfBirth}
-                                    onChange={(newValue) =>
-                                        setEmployee({ ...employee, dateOfBirth: newValue })
-                                    }
-                                    renderInput={(params) => <TextField fullWidth {...params} />}
+                                    onChange={(newValue) => {
+                                        if(newValue.toString() !== 'Invalid Date')
+                                            setEmployee({ ...employee, dateOfBirth: newValue })
+                                    }}
+                                    renderInput={(params) => <TextField 
+                                        fullWidth {...params} 
+                                        value={employee.dateOfBirth}
+                                        error={error.dateOfBirth}
+                                        helperText={error.dateOfBirth ? 'Veuillez entre une date' : '' }
+                                    />}
                                 />
                             </LocalizationProvider>
                         </Box>
@@ -144,10 +216,16 @@ function FormUser() {
                                     id="start-date"
                                     label="Start Date"
                                     value={employee.startDate}
-                                    onChange={(newValue) =>
-                                        setEmployee({ ...employee, startDate: newValue })
-                                    }
-                                    renderInput={(params) => <TextField fullWidth {...params} />}
+                                    onChange={(newValue) => {
+                                        if(newValue.toString() !== 'Invalid Date')
+                                            setEmployee({ ...employee, startDate: newValue })
+                                    }}
+                                    renderInput={(params) => <TextField 
+                                        fullWidth {...params} 
+                                        value={null}
+                                        error={error.startDate}
+                                        helperText={error.startDate ? 'Veuillez entre une date' : '' }
+                                    />}
                                 />
                             </LocalizationProvider>
                         </Box>
@@ -156,12 +234,13 @@ function FormUser() {
                                 <legend>Address</legend>
                                 <Box mt={1}>
                                     <TextField
+                                        value={employee.street}
                                         required 
                                         id="street" 
                                         label="Street"
                                         fullWidth 
-                                        // error={error.street}
-                                        // helperText={error.street ? 'Veuillez entre une valeur' : '' }
+                                        error={error.street}
+                                        helperText={error.street ? 'Veuillez entre une valeur' : '' }
                                         onChange={(e) =>
                                             setEmployee({ ...employee, street: e.target.value })
                                         }
@@ -169,12 +248,13 @@ function FormUser() {
                                 </Box>
                                 <Box mt={1}>
                                     <TextField
+                                        value={employee.city}
                                         required 
                                         id="city"
                                         label="City"
                                         fullWidth 
-                                        // error={error.city}
-                                        // helperText={error.city ? 'Veuillez entre une valeur' : '' }
+                                        error={error.city}
+                                        helperText={error.city ? 'Veuillez entre une valeur' : '' }
                                         onChange={(e) =>
                                             setEmployee({ ...employee, city: e.target.value })
                                         }
@@ -189,8 +269,6 @@ function FormUser() {
                                             labelId="select-label-state"
                                             label="State"
                                             value={employee.state}
-                                            // error={error.state}
-                                            // helperText={error.state ? 'Veuillez entre une valeur' : '' } 
                                             onChange={(e) =>
                                                 setEmployee({ ...employee, state: e.target.value })
                                             }
@@ -205,13 +283,14 @@ function FormUser() {
                                 </Box>
                                 <Box mt={1}>
                                     <TextField
+                                        value={employee.zipCode}
                                         required 
                                         id="zip-code"
                                         label="Zip Code"
                                         fullWidth 
                                         inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-                                        error={!Number.isInteger(parseInt(employee.zipCode)) && employee.zipCode !== null}
-                                        helperText={!Number.isInteger(parseInt(employee.zipCode)) && employee.zipCode !== null ? 'Veuillez entre un nombre' : '' }
+                                        error={!Number.isInteger(parseInt(employee.zipCode)) && employee.zipCode !== null && employee.zipCode !== ''}
+                                        helperText={!Number.isInteger(parseInt(employee.zipCode)) && employee.zipCode !== null && employee.zipCode !== '' ? 'Veuillez entre un nombre' : '' }
                                         onChange={(e) => {
                                             setEmployee({ ...employee, zipCode: parseInt(e.target.value) })
                                         }}
@@ -228,8 +307,6 @@ function FormUser() {
                                     labelId="select-label-department" 
                                     label="Department"
                                     value={employee.department}
-                                    // error={error.department}
-                                    // helperText={error.department ? 'Veuillez entre une valeur' : '' } 
                                     onChange={(e) =>
                                         setEmployee({ ...employee, department: e.target.value })
                                     }
