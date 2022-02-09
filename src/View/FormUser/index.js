@@ -30,7 +30,7 @@ function FormUser() {
 
     const { users, setUsers } = useContext(usersContext)
 
-    const [open, setOpen] = useState(true);
+    const [open, setOpen] = useState(false);
     const handleOpen = () => setOpen(true);
     const handleClose = () => setOpen(false);
 
